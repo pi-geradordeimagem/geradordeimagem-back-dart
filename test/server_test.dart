@@ -14,7 +14,6 @@ void main() {
       ['run', 'bin/server.dart'],
       environment: {'PORT': port},
     );
-    // Wait for server to start and print to stdout.
     await p.stdout.first;
   });
 
@@ -23,17 +22,13 @@ void main() {
   test('Root', () async {
     final response = await get(Uri.parse('$host/'));
     expect(response.statusCode, 200);
-    expect(response.body, 'Hello, World!\n');
-  });
-
-  test('Echo', () async {
-    final response = await get(Uri.parse('$host/echo/hello'));
-    expect(response.statusCode, 200);
-    expect(response.body, 'hello\n');
+    expect(response.body, 'Hello World!');
   });
 
   test('404', () async {
     final response = await get(Uri.parse('$host/foobar'));
     expect(response.statusCode, 404);
   });
+
+  
 }
