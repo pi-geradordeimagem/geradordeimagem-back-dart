@@ -2,7 +2,7 @@ import 'package:geradordeimagem_back_dart/services/hello_service.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('HelloRepository', () {
+  group('HelloService', () {
     final service = HelloService();
 
     test('sayHello returns Hello World', () {
