@@ -12,8 +12,14 @@ class ImageController {
 
     r.post('/', (Request req) async {
       final body = jsonDecode(await req.readAsString());
-      final msg = await service.generateImage(body['prompt']);
-      return Response.ok(msg, headers: {'content-type': 'image/png'});
+
+      try {
+        final msg = await service.generateImage(body['prompt']);
+
+        return Response.ok(msg, headers: {'content-type': 'image/png'});
+      } catch (e) {
+        return Response(500, body: jsonEncode({'error': e.toString()}));
+      }
     });
 
     return r;
