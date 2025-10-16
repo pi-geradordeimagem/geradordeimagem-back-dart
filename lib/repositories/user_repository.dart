@@ -62,7 +62,7 @@ class UserRepository {
     }
 
     final jwt = JWT(
-      {"email": user['email'], "admin": user['admin']},
+      {"id": user['_id'],"email": user['email'], "admin": user['admin']},
     );
 
     final token = jwt.sign(SecretKey(jwtSecret), expiresIn: Duration(hours: 1));
