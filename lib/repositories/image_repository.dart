@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'package:geradordeimagem_back_dart/utils/mongo_connect.dart';
 import 'package:http/http.dart' as http;
 
 class ImageRepository {
   final String apiKey;
+  late final db;
 
   ImageRepository({
     required this.apiKey,
-  });
+  }) {
+    db = mongoConnect();
+  }
 
   generateImageFromText(String prompt) async {
     final Uri url = Uri.parse("https://openrouter.ai/api/v1/chat/completions");
@@ -54,6 +58,7 @@ class ImageRepository {
       throw Exception('Resposta inesperada da API');
     }
 
+    await putImageInDatabase(responseData['choices'][0]['message']['images'][0]['image_url']['url'], prompt);
     return responseData['choices'][0]['message']['images'][0]['image_url']['url'];
   }
 
@@ -61,5 +66,20 @@ class ImageRepository {
     final regex = RegExp(r'data:image/[^;]+;base64,');
     base64String = base64String.replaceFirst(regex, '');
     return base64Decode(base64String);
+  }
+
+  putImageInDatabase(String base64Image, String prompt) async {
+    final mongoDb = await db;
+
+    Map<String, dynamic> imageToInsert = {
+      'image_data': base64Image,
+      'createdAt': DateTime.now().toIso8601String(),
+      'prompt': prompt,
+    };
+
+    final imagesCollection = mongoDb.collection('images');
+
+    await imagesCollection.insertOne(imageToInsert);
+    return imageToInsert;
   }
 }
