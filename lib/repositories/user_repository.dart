@@ -26,6 +26,7 @@ class UserRepository {
 
     Map<String, dynamic> userToInsert = {
       'email': userData['email'],
+      'username': userData['username'],
       'password_hash': userData['password_hash'],
       'admin': false,
       'createdAt': DateTime.now().toIso8601String(),
@@ -38,6 +39,13 @@ class UserRepository {
     if (userExists != null) {
       print('User with email ${userData['email']} already exists.');
       throw Exception('User already exists');
+    }
+
+    final usernameExists = await usersCollection.findOne({'username': userData['username']});
+
+    if (usernameExists != null) {
+      print('User with username ${userData['username']} already exists.');
+      throw Exception('Username already exists');
     }
 
     await usersCollection.insertOne(userToInsert);
@@ -62,7 +70,12 @@ class UserRepository {
     }
 
     final jwt = JWT(
-      {"id": user['_id'],"email": user['email'], "admin": user['admin']},
+      {
+        "id": user['_id'],
+        "email": user['email'],
+        "username": user['username'],
+        "admin": user['admin']
+      },
     );
 
     final token = jwt.sign(SecretKey(jwtSecret), expiresIn: Duration(hours: 1));
