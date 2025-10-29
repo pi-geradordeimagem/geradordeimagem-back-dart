@@ -83,4 +83,19 @@ class ImageRepository {
     await imagesCollection.insertOne(imageToInsert);
     return imageToInsert;
   }
+
+  getUserImages(Object? userId) async {
+    final mongoDb = await db;
+    final imagesCollection = mongoDb.collection('images');
+    
+    final images = await imagesCollection.find({'userId': userId}).toList();
+    
+    return images.map((image) => {
+      'id': image['_id'].toString(),
+      'image_data': image['image_data'],
+      'prompt': image['prompt'],
+      'createdAt': image['createdAt'],
+      'userId': image['userId'].toString(),
+    }).toList();
+  }
 }

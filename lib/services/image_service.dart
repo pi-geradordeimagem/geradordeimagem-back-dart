@@ -10,4 +10,8 @@ class ImageService {
     final img = repo.base64ToImage(base64Img);
     return img;
   }
+
+  getUserImages(userId) async {
+    return await repo.getUserImages(userId);
+  }
 }

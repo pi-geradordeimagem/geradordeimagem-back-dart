@@ -33,6 +33,29 @@ class ImageController {
       })(req);
     });
 
+    r.get('/user', (Request req) async {
+      return await withAuth((Request req) async {
+        try {
+          final userId = req.context['userId'];
+          final userEmail = req.context['userEmail'];
+          print('Usuário $userEmail is requesting their images');
+
+          final images = await service.getUserImages(userId);
+
+          return Response.ok(
+            jsonEncode({'images': images}),
+            headers: {'content-type': 'application/json'},
+          );
+        } catch (e) {
+          return Response(
+            500,
+            body: jsonEncode({'error': e.toString()}),
+            headers: {'content-type': 'application/json'},
+          );
+        }
+      })(req);
+    });
+
     return r;
   }
 }
