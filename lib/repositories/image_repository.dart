@@ -12,7 +12,7 @@ class ImageRepository {
     db = mongoConnect();
   }
 
-  generateImageFromText(String prompt) async {
+  generateImageFromText(String prompt, Object? userId) async {
     final Uri url = Uri.parse("https://openrouter.ai/api/v1/chat/completions");
 
     final body = {
@@ -58,7 +58,7 @@ class ImageRepository {
       throw Exception('Resposta inesperada da API');
     }
 
-    await putImageInDatabase(responseData['choices'][0]['message']['images'][0]['image_url']['url'], prompt);
+    await putImageInDatabase(responseData['choices'][0]['message']['images'][0]['image_url']['url'], prompt, userId);
     return responseData['choices'][0]['message']['images'][0]['image_url']['url'];
   }
 
@@ -68,13 +68,14 @@ class ImageRepository {
     return base64Decode(base64String);
   }
 
-  putImageInDatabase(String base64Image, String prompt) async {
+  putImageInDatabase(String base64Image, String prompt, Object? userId) async {
     final mongoDb = await db;
 
     Map<String, dynamic> imageToInsert = {
       'image_data': base64Image,
       'createdAt': DateTime.now().toIso8601String(),
       'prompt': prompt,
+      'userId': userId,
     };
 
     final imagesCollection = mongoDb.collection('images');

@@ -5,8 +5,8 @@ class ImageService {
 
   final repo = ImageRepository(apiKey: loadDotEnv()['API_KEY'] ?? '');
 
-  generateImage(prompt) async {
-    final base64Img = await repo.generateImageFromText(prompt);
+  generateImage(prompt, userId) async {
+    final base64Img = await repo.generateImageFromText(prompt, userId);
     final img = repo.base64ToImage(base64Img);
     return img;
   }

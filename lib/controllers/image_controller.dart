@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:geradordeimagem_back_dart/middlewares/guard_helpers.dart';
 import 'package:geradordeimagem_back_dart/services/image_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -11,15 +12,25 @@ class ImageController {
     final r = Router();
 
     r.post('/', (Request req) async {
-      final body = jsonDecode(await req.readAsString());
+      return await withAuth((Request req) async {
+        try {
+          final userEmail = req.context['userEmail'];
+          print('Usuário $userEmail is requesting image generation');
+          
+          final body = jsonDecode(await req.readAsString());
+          final userId = req.context['userId'];
 
-      try {
-        final msg = await service.generateImage(body['prompt']);
+          final msg = await service.generateImage(body['prompt'], userId);
 
-        return Response.ok(msg, headers: {'content-type': 'image/png'});
-      } catch (e) {
-        return Response(500, body: jsonEncode({'error': e.toString()}));
-      }
+          return Response.ok(msg, headers: {'content-type': 'image/png'});
+        } catch (e) {
+          return Response(
+            500, 
+            body: jsonEncode({'error': e.toString()}),
+            headers: {'content-type': 'application/json'},
+          );
+        }
+      })(req);
     });
 
     return r;
