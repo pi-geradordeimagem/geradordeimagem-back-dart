@@ -98,4 +98,16 @@ class ImageRepository {
       'userId': image['userId'].toString(),
     }).toList();
   }
+
+  deleteUserImages(Object? userId) async {
+    final mongoDb = await db;
+    final imagesCollection = mongoDb.collection('images');
+    
+    final result = await imagesCollection.deleteMany({'userId': userId});
+    
+    return {
+      'deletedCount': result['n'],
+      'message': 'User images deleted successfully'
+    };
+  }
 }

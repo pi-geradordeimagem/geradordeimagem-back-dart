@@ -118,6 +118,57 @@ class UserController {
       })(req);
     });
 
+    r.put('/<email>', (Request req, String email) async {
+      return await withAuth((Request req) async {
+        try {
+          final requestUserEmail = req.context['userEmail'] as String;
+          final isAdmin = req.context['isAdmin'] as bool;
+          
+          if (!isAdmin && requestUserEmail != email) {
+            return Response(
+              403,
+              body: jsonEncode({'error': 'You can only edit your own user data'}),
+              headers: {'content-type': 'application/json'},
+            );
+          }
+
+          final updateDataString = await req.readAsString();
+          final Map<String, dynamic> updateData = jsonDecode(updateDataString);
+
+          if (updateData.isEmpty) {
+            return Response(
+              400,
+              body: jsonEncode({'error': 'No data provided for update'}),
+              headers: {'content-type': 'application/json'},
+            );
+          }
+
+          updateData.remove('_id');
+          updateData.remove('password_hash');
+          updateData.remove('createdAt');
+
+          final updatedUser = await service.updateUser(
+            email, 
+            updateData, 
+            isAdmin: isAdmin
+          );
+
+          updatedUser.remove('password_hash');
+
+          return Response.ok(
+            jsonEncode(updatedUser),
+            headers: {'content-type': 'application/json'},
+          );
+        } catch (e) {
+          return Response(
+            500, 
+            body: jsonEncode({'error': e.toString()}),
+            headers: {'content-type': 'application/json'},
+          );
+        }
+      })(req);
+    });
+
     return r;
   }
 }

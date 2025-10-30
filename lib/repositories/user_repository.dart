@@ -124,4 +124,45 @@ class UserRepository {
 
     return userExists;
   }
+
+  updateUser(String email, Map<String, dynamic> updateData) async {
+    final mongoDb = await db;
+
+    final usersCollection = mongoDb.collection('users');
+
+    final userExists = await usersCollection.findOne({'email': email});
+
+    if (userExists == null) {
+      throw Exception('User not found');
+    }
+
+    if (updateData.containsKey('email') && updateData['email'] != email) {
+      final emailExists = await usersCollection.findOne({'email': updateData['email']});
+      if (emailExists != null) {
+        throw Exception('Email already in use');
+      }
+    }
+
+    if (updateData.containsKey('username') && updateData['username'] != userExists['username']) {
+      final usernameExists = await usersCollection.findOne({'username': updateData['username']});
+      if (usernameExists != null) {
+        throw Exception('Username already in use');
+      }
+    }
+
+    if (updateData.containsKey('password')) {
+      updateData['password_hash'] = hashPassword(updateData['password']);
+      updateData.remove('password');
+    }
+
+    updateData['updatedAt'] = DateTime.now().toIso8601String();
+
+    await usersCollection.updateOne(
+      {'email': email},
+      {'\$set': updateData}
+    );
+
+    final updatedUser = await usersCollection.findOne({'email': updateData['email'] ?? email});
+    return updatedUser;
+  }
 }
