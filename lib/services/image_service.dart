@@ -18,4 +18,8 @@ class ImageService {
   deleteUserImages(userId) async {
     return await repo.deleteUserImages(userId);
   }
+
+  deleteImageById(String imageId, userId) async {
+    return await repo.deleteImageById(imageId, userId);
+  }
 }

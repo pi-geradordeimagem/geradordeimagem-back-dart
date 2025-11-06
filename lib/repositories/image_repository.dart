@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:geradordeimagem_back_dart/utils/mongo_connect.dart';
 import 'package:http/http.dart' as http;
+import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
 class ImageRepository {
   final String apiKey;
@@ -106,8 +107,38 @@ class ImageRepository {
     final result = await imagesCollection.deleteMany({'userId': userId});
     
     return {
-      'deletedCount': result['n'],
+      'deletedCount': result.nRemoved,
       'message': 'User images deleted successfully'
     };
+  }
+
+  deleteImageById(String imageId, Object? userId) async {
+    final mongoDb = await db;
+    final imagesCollection = mongoDb.collection('images');
+    
+    try {
+      // Validar que o imageId tem 24 caracteres hexadecimais
+      if (imageId.length != 24 || !RegExp(r'^[0-9a-fA-F]{24}$').hasMatch(imageId)) {
+        throw Exception('Invalid image ID format. Expected 24 hexadecimal characters, got ${imageId.length} characters: $imageId');
+      }
+      
+      final objectId = ObjectId.fromHexString(imageId);
+      
+      final result = await imagesCollection.deleteOne({
+        '_id': objectId,
+        'userId': userId,
+      });
+      
+      if (result.nRemoved == 0) {
+        throw Exception('Image not found or you do not have permission to delete it');
+      }
+      
+      return {
+        'deletedCount': result.nRemoved,
+        'message': 'Image deleted successfully'
+      };
+    } catch (e) {
+      throw Exception('Error deleting image: $e');
+    }
   }
 }

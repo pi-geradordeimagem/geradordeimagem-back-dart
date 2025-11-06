@@ -56,6 +56,29 @@ class ImageController {
       })(req);
     });
 
+    r.delete('/<imageId>', (Request req, String imageId) async {
+      return await withAuth((Request req) async {
+        try {
+          final userId = req.context['userId'];
+          final userEmail = req.context['userEmail'];
+          print('Usuário $userEmail is deleting image $imageId');
+
+          final result = await service.deleteImageById(imageId, userId);
+
+          return Response.ok(
+            jsonEncode(result),
+            headers: {'content-type': 'application/json'},
+          );
+        } catch (e) {
+          return Response(
+            404,
+            body: jsonEncode({'error': e.toString()}),
+            headers: {'content-type': 'application/json'},
+          );
+        }
+      })(req);
+    });
+
     return r;
   }
 }
