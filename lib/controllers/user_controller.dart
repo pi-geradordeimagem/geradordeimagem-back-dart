@@ -39,6 +39,57 @@ class UserController {
       }
     });
 
+
+    r.post('/forgot-password', (Request req) async {
+      final requestDataString = await req.readAsString();
+      final Map<String, dynamic> requestData = jsonDecode(requestDataString);
+
+      final email = requestData['email'];
+
+      if (email == null || email.isEmpty) {
+        return Response(400, body: jsonEncode({'error': 'Email is required'}));
+      }
+
+      try {
+        final result = await service.requestPasswordReset(email);
+        if (result) {
+          return Response.ok(jsonEncode({'message': 'Verification code sent to your email'}));
+        } else {
+          return Response(500, body: jsonEncode({'error': 'Failed to send verification code'}));
+        }
+      } catch (e) {
+        return Response(500, body: jsonEncode({'error': e.toString()}));
+      }
+    });
+
+    r.post('/reset-password', (Request req) async {
+      final requestDataString = await req.readAsString();
+      final Map<String, dynamic> requestData = jsonDecode(requestDataString);
+
+      final email = requestData['email'];
+      final code = requestData['code'];
+      final newPassword = requestData['newPassword'];
+
+      if (email == null || email.isEmpty) {
+        return Response(400, body: jsonEncode({'error': 'Email is required'}));
+      }
+
+      if (code == null || code.isEmpty) {
+        return Response(400, body: jsonEncode({'error': 'Verification code is required'}));
+      }
+
+      if (newPassword == null || newPassword.isEmpty) {
+        return Response(400, body: jsonEncode({'error': 'New password is required'}));
+      }
+
+      try {
+        final result = await service.resetPassword(email, code, newPassword);
+        return Response.ok(jsonEncode(result));
+      } catch (e) {
+        return Response(400, body: jsonEncode({'error': e.toString()}));
+      }
+    });
+
     // Rotas protegidas - apenas admins
     r.delete('/remove/<email>', (Request req, String email) async {
       return await withAdmin((Request req) async {

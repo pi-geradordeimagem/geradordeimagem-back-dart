@@ -49,4 +49,20 @@ class UserService {
 
     return await repo.updateUser(email, updateData);
   }
+
+  sendVerificationCode(email, code) async {
+    return await repo.sendVerificationCode(email, code);
+  }
+
+  Future<bool> requestPasswordReset(String email) async {
+    return await repo.requestPasswordReset(email);
+  }
+
+  Future<bool> verifyResetCode(String email, String code) async {
+    return await repo.verifyResetCode(email, code);
+  }
+
+  Future<Map<String, dynamic>> resetPassword(String email, String code, String newPassword) async {
+    return await repo.resetPassword(email, code, newPassword);
+  }
 }

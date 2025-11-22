@@ -1,5 +1,6 @@
 import 'package:bcrypt/bcrypt.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:geradordeimagem_back_dart/utils/email_sender.dart';
 import 'package:geradordeimagem_back_dart/utils/env.dart';
 import 'package:geradordeimagem_back_dart/utils/mongo_connect.dart';
 
@@ -164,5 +165,92 @@ class UserRepository {
 
     final updatedUser = await usersCollection.findOne({'email': updateData['email'] ?? email});
     return updatedUser;
+  }
+
+  sendVerificationCode(email, code) async {
+    return await enviarEmailComCodigo(email, code);
+  }
+
+  Future<bool> requestPasswordReset(String email) async {
+    final mongoDb = await db;
+    final usersCollection = mongoDb.collection('users');
+    
+    final user = await usersCollection.findOne({'email': email});
+    
+    if (user == null) {
+      throw Exception('User not found');
+    }
+    
+    final code = _generateVerificationCode();
+    final expiresAt = DateTime.now().add(Duration(minutes: 15));
+    
+    await usersCollection.updateOne(
+      {'email': email},
+      {
+        '\$set': {
+          'resetPasswordCode': code,
+          'resetPasswordExpires': expiresAt.toIso8601String(),
+        }
+      }
+    );
+    
+    return await enviarEmailComCodigo(email, code);
+  }
+
+  Future<bool> verifyResetCode(String email, String code) async {
+    final mongoDb = await db;
+    final usersCollection = mongoDb.collection('users');
+    
+    final user = await usersCollection.findOne({'email': email});
+    
+    if (user == null) {
+      throw Exception('User not found');
+    }
+    
+    if (user['resetPasswordCode'] == null || user['resetPasswordExpires'] == null) {
+      return false;
+    }
+    
+    final expiresAt = DateTime.parse(user['resetPasswordExpires']);
+    
+    if (DateTime.now().isAfter(expiresAt)) {
+      return false;
+    }
+    
+    return user['resetPasswordCode'] == code;
+  }
+
+  Future<Map<String, dynamic>> resetPassword(String email, String code, String newPassword) async {
+    final mongoDb = await db;
+    final usersCollection = mongoDb.collection('users');
+    
+    final isValid = await verifyResetCode(email, code);
+    
+    if (!isValid) {
+      throw Exception('Invalid or expired verification code');
+    }
+    
+    final hashedPassword = hashPassword(newPassword);
+    
+    await usersCollection.updateOne(
+      {'email': email},
+      {
+        '\$set': {
+          'password_hash': hashedPassword,
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+        '\$unset': {
+          'resetPasswordCode': '',
+          'resetPasswordExpires': '',
+        }
+      }
+    );
+    
+    return {'message': 'Password reset successfully'};
+  }
+
+  String _generateVerificationCode() {
+    final random = DateTime.now().millisecondsSinceEpoch % 1000000;
+    return random.toString().padLeft(6, '0');
   }
 }
